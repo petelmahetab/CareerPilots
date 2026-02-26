@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "AI Career Coach",
-  description: "",
+  description: "Your AI-powered career growth companion — resume, interview prep & industry insights.",
 };
 
 export default function RootLayout({ children }) {

@@ -25,15 +25,37 @@ export default async function Header() {
   return (
     <header className="fixed top-0 w-full border-b bg-background/80 backdrop-blur-md z-50 supports-[backdrop-filter]:bg-background/60">
       <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/">
-          <Image
-            src={"/logo.png"}
-            alt="Sensai Logo"
-            width={200}
-            height={60}
-            className="h-12 py-1 w-auto object-contain"
+        <h3 className="text-2xl font-extrabold tracking-tight flex items-center gap-0">
+          <span className="text-foreground">AI Career</span>
+          <span className="relative ml-2">
+            <span
+              className="text-[#1a3a6b] drop-shadow-sm relative z-10"
+              style={{
+                background: "linear-gradient(135deg, #1a3a6b 0%, #2563eb 50%, #1e40af 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                filter: "drop-shadow(0 1px 2px rgba(26,58,107,0.15))",
+              }}
+            >
+              Coach
+            </span>
+            {/* Animated underline */}
+            <span
+              className="absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full"
+              style={{
+                background: "linear-gradient(90deg, #1a3a6b, #2563eb, #60a5fa)",
+                animation: "shimmer 2.5s ease-in-out infinite",
+                backgroundSize: "200% auto",
+              }}
+            />
+          </span>
+          {/* Animated dot */}
+          <span
+            className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-blue-600 self-start mt-1"
+            style={{ animation: "pulse 2s cubic-bezier(0.4,0,0.6,1) infinite" }}
           />
-        </Link>
+        </h3>
 
         {/* Action Buttons */}
         <div className="flex items-center space-x-2 md:space-x-4">
