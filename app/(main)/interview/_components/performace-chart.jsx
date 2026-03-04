@@ -32,6 +32,33 @@ export default function PerformanceChart({ assessments }) {
     }
   }, [assessments]);
 
+
+  if (chartData.length < 2) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="gradient-title text-3xl md:text-4xl">
+            Performance Trend
+          </CardTitle>
+          <CardDescription>Your quiz scores over time</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground gap-2">
+            <p className="text-lg font-medium">Not enough data yet</p>
+            <p className="text-sm">
+              Complete at least 2 quizzes to see your performance trend 📈
+            </p>
+            {chartData.length === 1 && (
+              <p className="text-sm font-medium text-primary">
+                Your last score: {chartData[0].score.toFixed(1)}% — keep going!
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>

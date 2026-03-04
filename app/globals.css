@@ -80,6 +80,18 @@ body {
   }
 }
 
+/* Remove scrollbars globally */
+html, body {
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;  
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;            
+}
+
 .hero-image-wrapper {
   perspective: 1000px;
 }

@@ -6,7 +6,7 @@ import {
   FileText,
   GraduationCap,
   ChevronDown,
-  StarsIcon,
+  StarsIcon, FlaskConical, Map,Zap
 } from "lucide-react";
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
@@ -17,10 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
-import { checkUser } from "@/lib/checkUser";
 
 export default async function Header() {
-  await checkUser();
 
   return (
     <header className="fixed top-0 w-full border-b bg-background/80 backdrop-blur-md z-50 supports-[backdrop-filter]:bg-background/60">
@@ -29,6 +27,7 @@ export default async function Header() {
           <span className="text-foreground">AI Career</span>
           <span className="relative ml-2">
             <span
+              suppressHydrationWarning
               className="text-[#1a3a6b] drop-shadow-sm relative z-10"
               style={{
                 background: "linear-gradient(135deg, #1a3a6b 0%, #2563eb 50%, #1e40af 100%)",
@@ -42,6 +41,7 @@ export default async function Header() {
             </span>
             {/* Animated underline */}
             <span
+              suppressHydrationWarning
               className="absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full"
               style={{
                 background: "linear-gradient(90deg, #1a3a6b, #2563eb, #60a5fa)",
@@ -50,8 +50,9 @@ export default async function Header() {
               }}
             />
           </span>
-          {/* Animated dot */}
+
           <span
+            suppressHydrationWarning
             className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-blue-600 self-start mt-1"
             style={{ animation: "pulse 2s cubic-bezier(0.4,0,0.6,1) infinite" }}
           />
@@ -72,7 +73,18 @@ export default async function Header() {
                 <LayoutDashboard className="h-4 w-4" />
               </Button>
             </Link>
-
+            <Link href="/guide">
+              <Button variant="outline" className="hidden md:inline-flex items-center gap-2">
+                <Map className="h-4 w-4" />
+                Roadmap
+              </Button>
+            </Link>
+            <Link href="/pricing">
+              <Button variant="outline" className="hidden md:inline-flex items-center gap-2 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10">
+                <Zap className="h-4 w-4" />
+                Upgrade
+              </Button>
+            </Link>
             {/* Growth Tools Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -98,12 +110,22 @@ export default async function Header() {
                     Cover Letter
                   </Link>
                 </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link href="/resume/test" className="flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4" />
+                    Resume Health  Checking Tools
+                  </Link>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem asChild>
                   <Link href="/interview" className="flex items-center gap-2">
                     <GraduationCap className="h-4 w-4" />
                     Interview Prep
                   </Link>
                 </DropdownMenuItem>
+
+
               </DropdownMenuContent>
             </DropdownMenu>
           </SignedIn>
@@ -128,6 +150,6 @@ export default async function Header() {
           </SignedIn>
         </div>
       </nav>
-    </header>
+    </header >
   );
 }

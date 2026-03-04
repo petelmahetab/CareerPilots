@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { UpgradeBanner } from "@/components/upgrade-banner";
 
 const DashboardView = ({ insights }) => {
   // Transform salary data for the chart
@@ -75,6 +76,7 @@ const DashboardView = ({ insights }) => {
 
   return (
     <div className="space-y-6">
+       <UpgradeBanner />
       <div className="flex justify-between items-center">
         <Badge variant="outline">Last updated: {lastUpdatedDate}</Badge>
       </div>

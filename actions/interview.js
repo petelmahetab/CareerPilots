@@ -20,10 +20,33 @@ export async function generateQuiz() {
 
   if (!user) throw new Error("User not found");
 
+  const randomTopics = [
+    "fundamentals and core concepts",
+    "advanced techniques and patterns",
+    "system design and architecture",
+    "debugging and problem solving",
+    "performance optimization",
+    "security best practices",
+    "real-world scenarios and edge cases",
+    "data structures and algorithms",
+    "testing and code quality",
+    "tools, workflows and deployment",
+  ];
+  const topic = randomTopics[Math.floor(Math.random() * randomTopics.length)];
+  const randomSeed = Math.random().toString(36).substring(7);
+
   const prompt = `
-    Generate 10 technical interview questions for a ${user.industry} professional${
+    Generate 10 UNIQUE technical interview questions focused on "${topic}" for a ${user.industry} professional${
     user.skills?.length ? ` with expertise in ${user.skills.join(", ")}` : ""
   }.
+
+    Session ID: ${randomSeed} (use this to ensure completely fresh, non-repeated questions)
+
+    Rules:
+    - Questions must be completely different from any previously generated set
+    - Focus specifically on the topic: "${topic}"
+    - Vary difficulty: 3 easy, 4 medium, 3 hard
+    - Make questions practical and scenario-based where possible
     
     Each question should be multiple choice with 4 options.
     
@@ -44,6 +67,7 @@ export async function generateQuiz() {
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: prompt }],
+      temperature: 1.0, // ✅ Max creativity = more varied questions
     });
 
     const text = response.choices[0].message.content;
