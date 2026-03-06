@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { generateRoadmap } from "@/actions/roadmap";
 
-// ── ALL domains (IT + Non-IT) ─────────────────────────────────
+
 const ALL_DOMAINS = [
-  // ── IT ──────────────────────────────────────────────────────
+
   {
     id: "Full-Stack",    label: "Full-Stack",    Icon: Layers,       color: "#6366f1",
     desc: "React + Node.js + DB + Deployment",
@@ -261,7 +261,7 @@ export default function GuidePage({ userIndustry }) {
   const availableDomains = useMemo(() => getMatchingDomains(userIndustry), [userIndustry]);
 
   const [step,           setStep]           = useState("pick");
-  const [selectedDomain, setSelectedDomain] = useState(a
+  const [selectedDomain, setSelectedDomain] = useState(
     availableDomains.length === 1 ? availableDomains[0].id : null
   );
   const [selectedExp,    setSelectedExp]    = useState(null);

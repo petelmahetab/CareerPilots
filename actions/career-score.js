@@ -12,7 +12,6 @@ export async function getUserCareerData() {
     const { userId } = await auth();
     if (!userId) return null;
 
-    // ── Core user query (no topic field — doesn't exist in schema) ──
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
       select: {
@@ -24,25 +23,23 @@ export async function getUserCareerData() {
         industry: true,
         resume: {
           select: { id: true, content: true, createdAt: true },
+          // ✅ NO take here — resume is one-to-one in your schema
         },
         assessments: {
-          select: {
-            quizScore: true,
-            // topic field removed — not in your Assessment schema
-          },
+          select: { quizScore: true },
           orderBy: { createdAt: "desc" },
           take: 10,
         },
         coverLetter: {
           select: { id: true, createdAt: true },
-          take: 5,
+          // ✅ NO take here either if coverLetter is also one-to-one
         },
       },
     });
 
     if (!user) return null;
 
-    // ── CareerScore — isolated so it never crashes core query ──
+    // ── CareerScore isolated — safe if model not yet in client ──
     let careerScore = [];
     try {
       const existing = await db.careerScore.findFirst({
@@ -51,7 +48,6 @@ export async function getUserCareerData() {
       });
       careerScore = existing ? [existing] : [];
     } catch {
-      // CareerScore model not in Prisma client yet — safe to ignore
       careerScore = [];
     }
 
@@ -78,7 +74,10 @@ export async function generateCareerScore(formData) {
         experience: true,
         skills: true,
         industry: true,
-        resume: { select: { content: true }, take: 1 },
+        resume: {
+          select: { content: true },
+          // ✅ NO take — one-to-one relation
+        },
         assessments: {
           select: { quizScore: true },
           orderBy: { createdAt: "desc" },
@@ -91,8 +90,8 @@ export async function generateCareerScore(formData) {
     if (user.plan !== "pro") return { success: false, error: "Pro access required." };
 
     // ── Build context ─────────────────────────────────────────
-    const resumeContent = user.resume?.[0]?.content
-      ? JSON.stringify(user.resume[0].content).slice(0, 1500)
+    const resumeContent = user.resume?.content
+      ? JSON.stringify(user.resume.content).slice(0, 1500)
       : "No resume created yet";
 
     const avgAssessmentScore = user.assessments?.length > 0
@@ -117,7 +116,7 @@ USER PROFILE:
 - Job Search Status: ${formData.jobSearchStatus || "Not specified"}
 - LinkedIn Profile: ${formData.linkedinUrl ? "Provided" : "Not provided"}
 - LinkedIn Connections: ${formData.linkedinConnections || "Unknown"}
-- Resume in App: ${user.resume?.length > 0 ? "Yes - created" : "No"}
+- Resume in App: ${user.resume ? "Yes - created" : "No"}
 - Resume Content Preview: ${resumeContent}
 - Interview Assessments: ${assessmentSummary}
 - Additional Context: ${formData.additionalContext || "None"}
@@ -230,7 +229,7 @@ skillGaps: 3-5 items, priority: "high", "medium", or "low"`;
         create: { userId: user.id, overallScore: scoreData.overallScore, data: scoreData },
       });
     } catch (dbErr) {
-      console.warn("CareerScore save skipped (run: npx prisma generate):", dbErr.message);
+      console.warn("CareerScore save skipped:", dbErr.message);
     }
 
     return { success: true, data: scoreData };

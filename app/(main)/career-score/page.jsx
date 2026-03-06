@@ -10,6 +10,16 @@ import {
 import Link from "next/link";
 import { getUserCareerData, generateCareerScore } from "@/actions/career-score";
 
+// ── Route correction map (Groq may return wrong paths) ────────
+const FEATURE_ROUTE_MAP = {
+  "/career-roadmap":    "/guide",
+  "/industry-insights": "/dashboard",
+  "/interview":         "/interview",
+  "/resume":            "/resume",
+};
+
+const fixRoute = (href) => FEATURE_ROUTE_MAP[href] || href || "/dashboard";
+
 // ── Helpers ───────────────────────────────────────────────────
 const GRADE_COLOR = {
   strong:       { text: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20", bar: "#34d399" },
@@ -39,9 +49,9 @@ const WEEK_COLORS = [
 ];
 
 function getOverallMeta(score) {
-  if (score >= 80) return { stroke: "#34d399", text: "text-emerald-400", label: "Excellent" };
-  if (score >= 65) return { stroke: "#60a5fa", text: "text-blue-400",    label: "Good"      };
-  if (score >= 50) return { stroke: "#fbbf24", text: "text-amber-400",   label: "Fair"      };
+  if (score >= 80) return { stroke: "#34d399", text: "text-emerald-400", label: "Excellent"  };
+  if (score >= 65) return { stroke: "#60a5fa", text: "text-blue-400",    label: "Good"       };
+  if (score >= 50) return { stroke: "#fbbf24", text: "text-amber-400",   label: "Fair"       };
   return                  { stroke: "#f87171", text: "text-red-400",     label: "Needs Work" };
 }
 
@@ -121,32 +131,34 @@ function ProGate() {
   );
 }
 
+// ── Questionnaire ─────────────────────────────────────────────
 function Questionnaire({ userData, onSubmit, loading }) {
   const [form, setForm] = useState({
-    targetRole: "",
-    yearsExp: userData?.experience?.toString() || "",
-    jobSearchStatus: "",
-    linkedinUrl: "",
+    targetRole:          "",
+    yearsExp:            userData?.experience?.toString() || "",
+    jobSearchStatus:     "",
+    linkedinUrl:         "",
     linkedinConnections: "",
-    industry: userData?.industry || "",
-    additionalContext: "",
+    industry:            userData?.industry || "",
+    additionalContext:   "",
   });
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const base = {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: "white",
-    outline: "none",
-    width: "100%",
-    padding: "12px 16px",
+    background:   "rgba(255,255,255,0.04)",
+    border:       "1px solid rgba(255,255,255,0.1)",
+    color:        "white",
+    outline:      "none",
+    width:        "100%",
+    padding:      "12px 16px",
     borderRadius: "12px",
-    fontSize: "14px",
+    fontSize:     "14px",
   };
 
+  // ── resume is one-to-one (object, not array) ──────────────
   const prefilled = [];
-  if (userData?.resume?.length > 0)     prefilled.push("Resume");
+  if (userData?.resume)                  prefilled.push("Resume");
   if (userData?.assessments?.length > 0) prefilled.push(`${userData.assessments.length} Assessments`);
   if (userData?.skills?.length > 0)      prefilled.push(`${userData.skills.length} Skills`);
   if (userData?.industry)                prefilled.push("Industry");
@@ -165,7 +177,8 @@ function Questionnaire({ userData, onSubmit, loading }) {
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-white">AI Career Score Card</h1>
           <p className="text-gray-400 text-sm leading-relaxed max-w-lg">
-            Answer a few questions and our AI will analyze your full profile — resume, assessments, skills — and generate your personalized career health score.
+            Answer a few questions and our AI will analyze your full profile — resume, assessments,
+            skills — and generate your personalized career health score.
           </p>
         </div>
 
@@ -176,7 +189,9 @@ function Questionnaire({ userData, onSubmit, loading }) {
             <CheckCircle className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-indigo-300 text-sm font-semibold">Data auto-loaded from your profile</p>
-              <p className="text-indigo-400/70 text-xs mt-0.5">{prefilled.join(" · ")} — already pulled from your account</p>
+              <p className="text-indigo-400/70 text-xs mt-0.5">
+                {prefilled.join(" · ")} — already pulled from your account
+              </p>
             </div>
           </div>
         )}
@@ -200,7 +215,7 @@ function Questionnaire({ userData, onSubmit, loading }) {
               </label>
               <select style={{ ...base, cursor: "pointer" }}
                 value={form.yearsExp} onChange={e => set("yearsExp", e.target.value)}>
-                <option value="" style={{ background: "#111" }}>Select...</option>
+                <option value=""   style={{ background: "#111" }}>Select...</option>
                 <option value="0"  style={{ background: "#111" }}>Student / Fresher</option>
                 <option value="1"  style={{ background: "#111" }}>Less than 1 year</option>
                 <option value="2"  style={{ background: "#111" }}>1–2 years</option>
@@ -216,11 +231,11 @@ function Questionnaire({ userData, onSubmit, loading }) {
               </label>
               <select style={{ ...base, cursor: "pointer" }}
                 value={form.jobSearchStatus} onChange={e => set("jobSearchStatus", e.target.value)}>
-                <option value=""                     style={{ background: "#111" }}>Select...</option>
-                <option value="actively-searching"   style={{ background: "#111" }}>Actively Searching</option>
+                <option value=""                      style={{ background: "#111" }}>Select...</option>
+                <option value="actively-searching"    style={{ background: "#111" }}>Actively Searching</option>
                 <option value="open-to-opportunities" style={{ background: "#111" }}>Open to Opportunities</option>
-                <option value="not-searching"        style={{ background: "#111" }}>Not Currently Searching</option>
-                <option value="student"              style={{ background: "#111" }}>Student / Fresher</option>
+                <option value="not-searching"         style={{ background: "#111" }}>Not Currently Searching</option>
+                <option value="student"               style={{ background: "#111" }}>Student / Fresher</option>
               </select>
             </div>
           </div>
@@ -239,7 +254,7 @@ function Questionnaire({ userData, onSubmit, loading }) {
               </label>
               <select style={{ ...base, cursor: "pointer" }}
                 value={form.linkedinConnections} onChange={e => set("linkedinConnections", e.target.value)}>
-                <option value=""        style={{ background: "#111" }}>Select...</option>
+                <option value=""          style={{ background: "#111" }}>Select...</option>
                 <option value="under-100" style={{ background: "#111" }}>Under 100</option>
                 <option value="100-300"   style={{ background: "#111" }}>100–300</option>
                 <option value="300-500"   style={{ background: "#111" }}>300–500</option>
@@ -278,6 +293,7 @@ function Questionnaire({ userData, onSubmit, loading }) {
   );
 }
 
+// ── Generating Loader ─────────────────────────────────────────
 function GeneratingLoader() {
   const steps = [
     "Reading your resume...",
@@ -325,7 +341,10 @@ function Results({ data, onRetake }) {
   const [animated, setAnimated] = useState(false);
   const meta = getOverallMeta(data.overallScore);
 
-  useEffect(() => { const t = setTimeout(() => setAnimated(true), 200); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+    const t = setTimeout(() => setAnimated(true), 200);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div className="min-h-screen p-6 md:p-10">
@@ -361,14 +380,16 @@ function Results({ data, onRetake }) {
             </div>
             <p className="text-gray-300 text-sm leading-relaxed max-w-lg">{data.summary}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="p-3 rounded-xl" style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
+              <div className="p-3 rounded-xl"
+                style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Top Strength</span>
                 </div>
                 <p className="text-xs text-gray-300 leading-relaxed">{data.topStrength}</p>
               </div>
-              <div className="p-3 rounded-xl" style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)" }}>
+              <div className="p-3 rounded-xl"
+                style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)" }}>
                 <div className="flex items-center gap-2 mb-1">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
                   <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Focus Area</span>
@@ -415,7 +436,8 @@ function Results({ data, onRetake }) {
                       <span className="font-semibold text-indigo-300">Quick win: </span>{cat.quickWin}
                     </p>
                   </div>
-                  <Link href={cat.linkedFeature || "/dashboard"}
+                  {/* ✅ fixRoute corrects any wrong path Groq returns */}
+                  <Link href={fixRoute(cat.linkedFeature)}
                     className={`flex items-center gap-1 text-xs font-semibold ${colors.text} hover:opacity-80 transition-opacity`}>
                     {cat.linkedFeatureLabel} <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
@@ -446,7 +468,8 @@ function Results({ data, onRetake }) {
                     <div className="text-sm font-semibold text-white">{gap.skill}</div>
                     <div className="text-xs text-gray-500 mt-0.5 truncate">{gap.reason}</div>
                   </div>
-                  <Link href={gap.linkedFeature || "/interview"}
+                  {/* ✅ fixRoute corrects any wrong path Groq returns */}
+                  <Link href={fixRoute(gap.linkedFeature)}
                     className="flex items-center gap-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex-shrink-0">
                     {gap.linkedFeatureLabel} <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
@@ -494,7 +517,7 @@ function Results({ data, onRetake }) {
           </div>
         </div>
 
-        {/* Quick Feature Links */}
+        {/* Quick Feature Links — ✅ correct routes hardcoded */}
         <div className="rounded-2xl p-6"
           style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
           <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
@@ -502,10 +525,10 @@ function Results({ data, onRetake }) {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Resume Builder",    href: "/resume",           Icon: FileText,      color: "#6366f1" },
-              { label: "Interview Prep",    href: "/interview",        Icon: GraduationCap, color: "#8b5cf6" },
-              { label: "Career Roadmap",    href: "/career-roadmap",   Icon: Map,           color: "#3b82f6" },
-              { label: "Industry Insights", href: "/industry-insights", Icon: BarChart2,    color: "#10b981" },
+              { label: "Resume Builder",    href: "/resume",    Icon: FileText,      color: "#6366f1" },
+              { label: "Interview Prep",    href: "/interview", Icon: GraduationCap, color: "#8b5cf6" },
+              { label: "Career Roadmap",    href: "/guide",     Icon: Map,           color: "#3b82f6" },
+              { label: "Industry Insights", href: "/dashboard", Icon: BarChart2,     color: "#10b981" },
             ].map(({ label, href, Icon, color }) => (
               <Link key={href} href={href}
                 className="flex flex-col items-center gap-2 p-4 rounded-xl text-center hover:opacity-80 transition-opacity group"
@@ -526,11 +549,13 @@ function Results({ data, onRetake }) {
             <RotateCcw className="w-3.5 h-3.5" /> Retake assessment to update your score
           </button>
         </div>
+
       </div>
     </div>
   );
 }
 
+// ── Page Root ─────────────────────────────────────────────────
 export default function CareerScorePage() {
   const [userData,    setUserData]    = useState(null);
   const [isPro,       setIsPro]       = useState(false);
@@ -548,11 +573,10 @@ export default function CareerScorePage() {
 
         setUserData(data);
 
-        // ── Key fix: explicitly check plan field ──────────────
         const userIsPro = data.plan === "pro";
         setIsPro(userIsPro);
 
-        // Load existing score if available
+        // Load saved score if exists
         if (userIsPro && data.careerScore?.length > 0 && data.careerScore[0]?.data) {
           setResults(data.careerScore[0].data);
           setState("results");
@@ -586,7 +610,7 @@ export default function CareerScorePage() {
     setState("questionnaire");
   };
 
-  // ── Loading ────────────────────────────────────────────────
+  // Loading
   if (pageLoading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
@@ -595,18 +619,18 @@ export default function CareerScorePage() {
     );
   }
 
-  // ── Pro gate ───────────────────────────────────────────────
+  // Free user — show lock screen
   if (!isPro) return <ProGate />;
 
-  // ── Generating ─────────────────────────────────────────────
+  // Generating
   if (state === "generating") return <GeneratingLoader />;
 
-  // ── Results ────────────────────────────────────────────────
+  // Results
   if (state === "results" && results) {
     return <Results data={results} onRetake={handleRetake} />;
   }
 
-  // ── Questionnaire ──────────────────────────────────────────
+  
   return (
     <>
       {error && (
