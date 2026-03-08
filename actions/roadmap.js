@@ -1,548 +1,201 @@
-"use client";
+"use server";
 
-import { useState, useMemo } from "react";
-import {
-  Map, Loader2, ChevronDown, ChevronUp, ExternalLink,
-  Youtube, BookOpen, GraduationCap, CheckCircle2, Circle,
-  Trophy, Zap, Clock, Target, ArrowRight, RotateCcw,
-  Layers, Palette, Server, BarChart2, BrainCircuit,
-  Container, ShieldCheck, DollarSign, Building2,
-  Megaphone, Users, HeartPulse, GraduationCap as GradIcon,
-  Scale, Calculator, ShoppingBag,
-} from "lucide-react";
-import { generateRoadmap } from "@/actions/roadmap";
+import Groq from "groq-sdk";
 
-// ── ALL domains (IT + Non-IT) ─────────────────────────────────
-const ALL_DOMAINS = [
-  // ── IT ──────────────────────────────────────────────────────
-  {
-    id: "Full-Stack",    label: "Full-Stack",    Icon: Layers,       color: "#6366f1",
-    desc: "React + Node.js + DB + Deployment",
-    keywords: ["full", "stack", "fullstack", "software", "engineer", "tech", "web", "developer", "development", "information technology", "computer science"],
-    category: "tech",
-  },
-  {
-    id: "Frontend",      label: "Frontend",      Icon: Palette,      color: "#3b82f6",
-    desc: "HTML, CSS, JS, React, Next.js",
-    keywords: ["front", "ui", "ux", "design", "web", "react", "angular", "vue", "html", "css", "javascript", "tech", "software"],
-    category: "tech",
-  },
-  {
-    id: "Backend",       label: "Backend",       Icon: Server,       color: "#10b981",
-    desc: "Node.js, APIs, Databases, Auth",
-    keywords: ["back", "api", "server", "node", "python", "java", "database", "sql", "microservice", "tech", "software"],
-    category: "tech",
-  },
-  {
-    id: "Data Science",  label: "Data Science",  Icon: BarChart2,    color: "#f59e0b",
-    desc: "Python, Pandas, ML, Visualization",
-    keywords: ["data", "science", "analyst", "analytics", "bi", "business intelligence", "statistics", "python", "tech"],
-    category: "tech",
-  },
-  {
-    id: "AI/ML",         label: "AI / ML",       Icon: BrainCircuit, color: "#8b5cf6",
-    desc: "Deep Learning, PyTorch, LLMs",
-    keywords: ["ai", "ml", "machine", "learning", "deep", "neural", "llm", "nlp", "artificial", "intelligence", "tech"],
-    category: "tech",
-  },
-  {
-    id: "DevOps",        label: "DevOps",        Icon: Container,    color: "#ef4444",
-    desc: "Docker, CI/CD, AWS, Kubernetes",
-    keywords: ["devops", "cloud", "aws", "azure", "gcp", "infrastructure", "sre", "platform", "ops", "cicd", "tech"],
-    category: "tech",
-  },
-  {
-    id: "Cybersecurity", label: "Cybersecurity", Icon: ShieldCheck,  color: "#ec4899",
-    desc: "Networking, Ethical Hacking, SOC",
-    keywords: ["cyber", "security", "hacking", "network", "soc", "penetration", "ethical", "infosec", "tech"],
-    category: "tech",
-  },
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-  // ── Non-IT ──────────────────────────────────────────────────
-  {
-    id: "Finance",       label: "Finance",       Icon: DollarSign,   color: "#22c55e",
-    desc: "Investment, Financial Analysis, CFA",
-    keywords: ["financ", "investment", "trading", "equity", "portfolio", "wealth", "asset", "capital", "fund", "cfa", "fintech"],
-    category: "non-tech",
-  },
-  {
-    id: "Banking",       label: "Banking",       Icon: Building2,    color: "#06b6d4",
-    desc: "Retail, Corporate & Investment Banking",
-    keywords: ["bank", "credit", "loan", "retail banking", "corporate banking", "investment banking", "treasury", "risk"],
-    category: "non-tech",
-  },
-  {
-    id: "Marketing",     label: "Marketing",     Icon: Megaphone,    color: "#f97316",
-    desc: "Digital Marketing, SEO, Campaigns",
-    keywords: ["market", "seo", "brand", "digital", "content", "social media", "advertis", "campaign", "growth"],
-    category: "non-tech",
-  },
-  {
-    id: "HR",            label: "Human Resources", Icon: Users,      color: "#a855f7",
-    desc: "Recruitment, L&D, HR Operations",
-    keywords: ["hr", "human resource", "recruit", "talent", "people ops", "l&d", "training", "payroll", "compensation"],
-    category: "non-tech",
-  },
-  {
-    id: "Sales",         label: "Sales",         Icon: ShoppingBag,  color: "#eab308",
-    desc: "B2B/B2C Sales, CRM, Business Dev",
-    keywords: ["sales", "business development", "crm", "account", "revenue", "b2b", "b2c", "client"],
-    category: "non-tech",
-  },
-  {
-    id: "Healthcare",    label: "Healthcare",    Icon: HeartPulse,   color: "#f43f5e",
-    desc: "Clinical, Hospital & Health Management",
-    keywords: ["health", "medic", "clinical", "hospital", "pharma", "nursing", "doctor", "patient", "care"],
-    category: "non-tech",
-  },
-  {
-    id: "Education",     label: "Teaching",      Icon: GradIcon,     color: "#84cc16",
-    desc: "Curriculum, Pedagogy & Ed-Tech",
-    keywords: ["educat", "teach", "school", "curriculum", "pedagog", "tutor", "professor", "lecturer", "training"],
-    category: "non-tech",
-  },
-  {
-    id: "Legal",         label: "Legal",         Icon: Scale,        color: "#64748b",
-    desc: "Law, Compliance & Legal Practice",
-    keywords: ["legal", "law", "attorney", "advocate", "compliance", "litigation", "corporate law", "paralegal"],
-    category: "non-tech",
-  },
-  {
-    id: "Accounting",    label: "Accounting",    Icon: Calculator,   color: "#0ea5e9",
-    desc: "CPA, Auditing, Financial Reporting",
-    keywords: ["account", "audit", "cpa", "tax", "bookkeep", "financial report", "gaap", "ifrs", "cma"],
-    category: "non-tech",
-  },
-];
+const ROADMAP_RESOURCES = {
+  "Full-Stack": [
+    { type: "docs",    label: "MDN Web Docs",                    url: "https://developer.mozilla.org/en-US/docs/Learn" },
+    { type: "youtube", label: "Traversy Media",                  url: "https://www.youtube.com/c/TraversyMedia" },
+    { type: "course",  label: "The Odin Project",                url: "https://www.theodinproject.com/paths/full-stack-javascript" },
+    { type: "docs",    label: "roadmap.sh — Full Stack",         url: "https://roadmap.sh/full-stack" },
+    { type: "course",  label: "freeCodeCamp",                    url: "https://www.freecodecamp.org/learn" },
+    { type: "youtube", label: "Fireship",                        url: "https://www.youtube.com/c/Fireship" },
+  ],
+  "Frontend": [
+    { type: "docs",    label: "MDN Web Docs",                    url: "https://developer.mozilla.org/en-US/docs/Learn" },
+    { type: "youtube", label: "Kevin Powell — CSS",              url: "https://www.youtube.com/kepowob" },
+    { type: "course",  label: "freeCodeCamp — Web Design",       url: "https://www.freecodecamp.org/learn/2022/responsive-web-design/" },
+    { type: "docs",    label: "React Official Docs",             url: "https://react.dev/learn" },
+    { type: "course",  label: "roadmap.sh — Frontend",          url: "https://roadmap.sh/frontend" },
+    { type: "docs",    label: "JavaScript.info",                 url: "https://javascript.info" },
+  ],
+  "Backend": [
+    { type: "docs",    label: "Node.js Official Docs",           url: "https://nodejs.org/en/docs" },
+    { type: "youtube", label: "Traversy Media — Node.js",        url: "https://www.youtube.com/watch?v=fBNz5xF-Kx4" },
+    { type: "course",  label: "roadmap.sh — Backend",           url: "https://roadmap.sh/backend" },
+    { type: "docs",    label: "Express.js Guide",                url: "https://expressjs.com/en/guide/routing.html" },
+    { type: "course",  label: "freeCodeCamp — APIs",             url: "https://www.freecodecamp.org/learn/back-end-development-and-apis/" },
+    { type: "docs",    label: "PostgreSQL Tutorial",             url: "https://www.postgresqltutorial.com" },
+  ],
+  "Data Science": [
+    { type: "course",  label: "Kaggle Learn",                    url: "https://www.kaggle.com/learn" },
+    { type: "youtube", label: "StatQuest",                       url: "https://www.youtube.com/c/joshstarmer" },
+    { type: "docs",    label: "Pandas Docs",                     url: "https://pandas.pydata.org/docs/user_guide/index.html" },
+    { type: "course",  label: "freeCodeCamp — Data Analysis",    url: "https://www.freecodecamp.org/learn/data-analysis-with-python/" },
+    { type: "course",  label: "Google ML Crash Course",          url: "https://developers.google.com/machine-learning/crash-course" },
+    { type: "docs",    label: "roadmap.sh — Data Science",       url: "https://roadmap.sh/ai-data-scientist" },
+  ],
+  "AI/ML": [
+    { type: "course",  label: "fast.ai — Practical Deep Learning", url: "https://course.fast.ai" },
+    { type: "youtube", label: "Andrej Karpathy — Zero to Hero",  url: "https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ" },
+    { type: "docs",    label: "PyTorch Tutorials",               url: "https://pytorch.org/tutorials/" },
+    { type: "youtube", label: "3Blue1Brown — Neural Networks",   url: "https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" },
+    { type: "docs",    label: "Hugging Face NLP Course",         url: "https://huggingface.co/learn/nlp-course/chapter1/1" },
+    { type: "course",  label: "Kaggle — Intro to ML",            url: "https://www.kaggle.com/learn/intro-to-machine-learning" },
+  ],
+  "DevOps": [
+    { type: "docs",    label: "roadmap.sh — DevOps",             url: "https://roadmap.sh/devops" },
+    { type: "youtube", label: "TechWorld with Nana",             url: "https://www.youtube.com/c/TechWorldwithNana" },
+    { type: "docs",    label: "Docker Get Started",              url: "https://docs.docker.com/get-started/" },
+    { type: "docs",    label: "Kubernetes Tutorials",            url: "https://kubernetes.io/docs/tutorials/" },
+    { type: "course",  label: "AWS Free Training",               url: "https://aws.amazon.com/training/digital/aws-cloud-practitioner-essentials/" },
+    { type: "youtube", label: "Fireship — Docker 100s",          url: "https://www.youtube.com/watch?v=Gjnup-PuquQ" },
+  ],
+  "Cybersecurity": [
+    { type: "course",  label: "TryHackMe",                       url: "https://tryhackme.com" },
+    { type: "docs",    label: "roadmap.sh — Cybersecurity",      url: "https://roadmap.sh/cyber-security" },
+    { type: "youtube", label: "NetworkChuck",                    url: "https://www.youtube.com/c/NetworkChuck" },
+    { type: "course",  label: "PortSwigger Web Academy",         url: "https://portswigger.net/web-security" },
+    { type: "docs",    label: "OWASP Top 10",                    url: "https://owasp.org/www-project-top-ten/" },
+    { type: "youtube", label: "John Hammond",                    url: "https://www.youtube.com/c/JohnHammond010" },
+  ],
+  "Finance": [
+    { type: "course",  label: "Khan Academy — Finance",          url: "https://www.khanacademy.org/economics-finance-domain/core-finance" },
+    { type: "docs",    label: "Investopedia — Finance",          url: "https://www.investopedia.com/financial-term-dictionary-4769738" },
+    { type: "course",  label: "CFI Free Courses",                url: "https://corporatefinanceinstitute.com/free-courses/" },
+    { type: "youtube", label: "YouTube — Finance Career",        url: "https://www.youtube.com/results?search_query=finance+career+roadmap" },
+    { type: "course",  label: "Coursera — Financial Markets",    url: "https://www.coursera.org/learn/financial-markets-global" },
+    { type: "docs",    label: "Investopedia — Investing Basics", url: "https://www.investopedia.com/investing-4427685" },
+  ],
+  "Banking": [
+    { type: "course",  label: "Khan Academy — Banking & Money",  url: "https://www.khanacademy.org/economics-finance-domain/core-finance/money-and-banking" },
+    { type: "docs",    label: "Investopedia — Banking",          url: "https://www.investopedia.com/banking-4427754" },
+    { type: "youtube", label: "YouTube — Banking Career",        url: "https://www.youtube.com/results?search_query=banking+career+path+guide" },
+    { type: "course",  label: "CFI — Banking Career Path",       url: "https://corporatefinanceinstitute.com/resources/career/investment-banking-career-path/" },
+    { type: "course",  label: "Coursera — Business & Finance",   url: "https://www.coursera.org/learn/wharton-business-financial-modeling" },
+    { type: "docs",    label: "Investopedia — How Banks Work",   url: "https://www.investopedia.com/articles/basics/07/banking.asp" },
+  ],
+  "Marketing": [
+    { type: "course",  label: "Google Digital Garage",           url: "https://learndigital.withgoogle.com/digitalgarage/course/digital-marketing" },
+    { type: "course",  label: "HubSpot Academy",                 url: "https://academy.hubspot.com/" },
+    { type: "youtube", label: "YouTube — Digital Marketing",     url: "https://www.youtube.com/results?search_query=digital+marketing+roadmap+beginners" },
+    { type: "docs",    label: "Neil Patel Blog",                 url: "https://neilpatel.com/blog/" },
+    { type: "docs",    label: "Moz — SEO Learning Center",       url: "https://moz.com/learn/seo" },
+    { type: "course",  label: "Coursera — Marketing Analytics",  url: "https://www.coursera.org/learn/marketing-analytics" },
+  ],
+  "HR": [
+    { type: "docs",    label: "SHRM — HR Topics",                url: "https://www.shrm.org/topics-tools/topics" },
+    { type: "course",  label: "Coursera — HR Management",        url: "https://www.coursera.org/learn/human-resource-management" },
+    { type: "youtube", label: "YouTube — HR Career Roadmap",     url: "https://www.youtube.com/results?search_query=hr+career+path+roadmap" },
+    { type: "docs",    label: "Indeed — HR Career Guide",        url: "https://www.indeed.com/career-advice/finding-a-job/hr-interview-questions" },
+    { type: "docs",    label: "OPM — HR Resources",              url: "https://www.opm.gov/policy-data-oversight/" },
+    { type: "youtube", label: "YouTube — HR Interview Questions", url: "https://www.youtube.com/results?search_query=hr+interview+questions+answers" },
+  ],
+  "Sales": [
+    { type: "docs",    label: "HubSpot Blog — Sales",            url: "https://blog.hubspot.com/sales" },
+    { type: "course",  label: "Salesforce Trailhead",            url: "https://trailhead.salesforce.com/content/learn/trails/build-your-sales-skills" },
+    { type: "youtube", label: "YouTube — Sales Career Roadmap",  url: "https://www.youtube.com/results?search_query=sales+career+roadmap+beginners" },
+    { type: "course",  label: "Coursera — Art of Sales",         url: "https://www.coursera.org/specializations/the-art-of-sales-mastering-the-selling-process" },
+    { type: "docs",    label: "Close.io — Sales Resources",      url: "https://www.close.com/resources/" },
+    { type: "youtube", label: "YouTube — Consultative Selling",  url: "https://www.youtube.com/results?search_query=consultative+selling+techniques" },
+  ],
+  "Healthcare": [
+    { type: "docs",    label: "WHO — Health Topics",             url: "https://www.who.int/health-topics" },
+    { type: "course",  label: "Coursera — Healthcare Mgmt",      url: "https://www.coursera.org/learn/healthcare-management" },
+    { type: "youtube", label: "YouTube — Healthcare Career",     url: "https://www.youtube.com/results?search_query=healthcare+career+path+guide" },
+    { type: "course",  label: "Khan Academy — Health & Medicine", url: "https://www.khanacademy.org/science/health-and-medicine" },
+    { type: "docs",    label: "MedlinePlus Encyclopedia",        url: "https://medlineplus.gov/encyclopedia.html" },
+    { type: "docs",    label: "CDC Resources",                   url: "https://www.cdc.gov/" },
+  ],
+  "Education": [
+    { type: "docs",    label: "Edutopia — Teaching",             url: "https://www.edutopia.org/" },
+    { type: "course",  label: "Coursera — Education for All",    url: "https://www.coursera.org/learn/education-for-all" },
+    { type: "youtube", label: "YouTube — Teaching Career",       url: "https://www.youtube.com/results?search_query=teaching+career+roadmap+guide" },
+    { type: "docs",    label: "Khan Academy for Teachers",       url: "https://www.khanacademy.org/" },
+    { type: "docs",    label: "TeachThought Resources",          url: "https://www.teachthought.com/" },
+    { type: "course",  label: "Google Teach From Home",          url: "https://teachfromhome.google/intl/en/" },
+  ],
+  "Legal": [
+    { type: "docs",    label: "Cornell Law — Legal Dictionary",  url: "https://www.law.cornell.edu/wex" },
+    { type: "course",  label: "Coursera — Intro to Law",         url: "https://www.coursera.org/learn/intro-to-law" },
+    { type: "youtube", label: "YouTube — Law Career Roadmap",    url: "https://www.youtube.com/results?search_query=law+career+path+roadmap" },
+    { type: "docs",    label: "Legal Information Institute",     url: "https://www.law.cornell.edu/" },
+    { type: "docs",    label: "FindLaw — Legal Topics",          url: "https://www.findlaw.com/" },
+    { type: "course",  label: "edX — Introduction to Law",      url: "https://www.edx.org/learn/law" },
+  ],
+  "Accounting": [
+    { type: "course",  label: "AccountingCoach — Free Lessons",  url: "https://www.accountingcoach.com/" },
+    { type: "youtube", label: "YouTube — Accounting Career",     url: "https://www.youtube.com/results?search_query=accounting+career+path+roadmap" },
+    { type: "docs",    label: "Investopedia — Accounting",       url: "https://www.investopedia.com/accounting-4427688" },
+    { type: "course",  label: "Khan Academy — Accounting",       url: "https://www.khanacademy.org/economics-finance-domain/core-finance/accounting-and-financial-statements" },
+    { type: "docs",    label: "ACCA Study Resources",            url: "https://www.accaglobal.com/gb/en/student/exam-support-resources.html" },
+    { type: "course",  label: "Coursera — Financial Accounting", url: "https://www.coursera.org/learn/financial-accounting" },
+  ],
+};
 
-// ── Match domains to user's onboarding industry ───────────────
-function getMatchingDomains(industry) {
-  if (!industry) return ALL_DOMAINS;
+function getResources(domain, count = 3) {
+  const pool = ROADMAP_RESOURCES[domain] || ROADMAP_RESOURCES["Full-Stack"];
+  return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+}
 
-  const lower = industry.toLowerCase();
+export async function generateRoadmap({ domain, experience, goal }) {
+  const prompt = `You are a world-class career mentor. Generate a learning roadmap for "${domain}".
 
-  // Score each domain
-  const scored = ALL_DOMAINS.map((d) => ({
-    ...d,
-    score: d.keywords.filter((kw) => lower.includes(kw)).length,
+User profile:
+- Experience: ${experience}
+- Goal: ${goal || `Build a strong career in ${domain}`}
+
+Return ONLY valid JSON, no markdown, no backticks:
+{
+  "title": "string",
+  "domain": "${domain}",
+  "totalWeeks": number,
+  "overview": "2-3 sentences",
+  "phases": [
+    {
+      "phase": 1,
+      "title": "string",
+      "weeks": "Week 1-2",
+      "description": "string",
+      "topics": [
+        { "name": "string", "description": "string", "estimatedHours": number }
+      ]
+    }
+  ],
+  "finalProject": { "title": "string", "description": "string", "techStack": ["string"] },
+  "jobReadyChecklist": ["string"]
+}
+
+Rules: 4-6 phases, 3-5 topics each. Scale to ${experience}. No URLs.`;
+
+  const response = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    max_tokens: 4000,
+    temperature: 0.5,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const text = response.choices[0]?.message?.content || "";
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  let roadmap;
+  try {
+    roadmap = JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) roadmap = JSON.parse(match[0]);
+    else throw new Error("Failed to parse roadmap. Please try again.");
+  }
+
+  roadmap.phases = roadmap.phases?.map((phase) => ({
+    ...phase,
+    topics: phase.topics?.map((topic) => ({
+      ...topic,
+      resources: getResources(domain, 3),
+    })),
   }));
 
-  const matches = scored.filter((d) => d.score > 0).sort((a, b) => b.score - a.score);
-
-  // If matched — return only matched domains
-  if (matches.length > 0) return matches;
-
-  // No match at all — show all
-  return ALL_DOMAINS;
-}
-
-// ── Experience levels ─────────────────────────────────────────
-const EXPERIENCE = [
-  { id: "Complete Beginner", label: "Complete Beginner", desc: "No prior experience" },
-  { id: "Some Basics",       label: "Some Basics",       desc: "Familiar with fundamentals" },
-  { id: "Intermediate",      label: "Intermediate",      desc: "Some real work experience" },
-  { id: "Advanced",          label: "Advanced",          desc: "Looking to specialize" },
-];
-
-// ── Resource icon ─────────────────────────────────────────────
-function ResourceIcon({ type }) {
-  if (type === "youtube") return <Youtube       className="w-3.5 h-3.5 text-red-400    flex-shrink-0" />;
-  if (type === "docs")    return <BookOpen      className="w-3.5 h-3.5 text-blue-400   flex-shrink-0" />;
-  return                         <GraduationCap className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />;
-}
-
-// ── Topic Card ────────────────────────────────────────────────
-function TopicCard({ topic, phaseIdx, topicIdx, checked, onToggle }) {
-  const [open, setOpen] = useState(false);
-  const key = `${phaseIdx}-${topicIdx}`;
-
-  return (
-    <div className="rounded-lg border transition-all" style={{
-      borderColor: checked ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.08)",
-      background:  checked ? "rgba(16,185,129,0.05)" : "rgba(255,255,255,0.02)",
-    }}>
-      <div className="p-3 flex items-start gap-3">
-        <button onClick={() => onToggle(key)} className="mt-0.5 flex-shrink-0">
-          {checked
-            ? <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            : <Circle       className="w-5 h-5 text-gray-600 hover:text-gray-400 transition-colors" />}
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className={`text-sm font-semibold ${checked ? "text-emerald-400 line-through opacity-70" : "text-white"}`}>
-              {topic.name}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <Clock className="w-3 h-3" />{topic.estimatedHours}h
-              </span>
-              <button onClick={() => setOpen(p => !p)} className="text-gray-500 hover:text-gray-300 transition-colors">
-                {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-          <div className="text-xs text-gray-400 mt-0.5">{topic.description}</div>
-          {open && topic.resources?.length > 0 && (
-            <div className="mt-3 space-y-1.5">
-              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Resources</div>
-              {topic.resources.map((r, i) => (
-                <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg transition-all hover:opacity-80"
-                  style={{
-                    background: r.type === "youtube" ? "rgba(239,68,68,0.1)"  : r.type === "docs" ? "rgba(59,130,246,0.1)"  : "rgba(16,185,129,0.1)",
-                    border:     r.type === "youtube" ? "1px solid rgba(239,68,68,0.2)" : r.type === "docs" ? "1px solid rgba(59,130,246,0.2)" : "1px solid rgba(16,185,129,0.2)",
-                    color:      r.type === "youtube" ? "#f87171" : r.type === "docs" ? "#60a5fa" : "#34d399",
-                  }}>
-                  <ResourceIcon type={r.type} />
-                  <span className="flex-1 truncate">{r.label}</span>
-                  <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-60" />
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Phase Section ─────────────────────────────────────────────
-function PhaseSection({ phase, phaseIdx, checked, onToggle, domainColor }) {
-  const [open, setOpen] = useState(phaseIdx === 0);
-  const total = phase.topics?.length || 0;
-  const done  = phase.topics?.filter((_, ti) => checked[`${phaseIdx}-${ti}`]).length || 0;
-  const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
-
-  return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-      <button onClick={() => setOpen(p => !p)}
-        className="w-full p-4 flex items-center gap-4 hover:bg-white/5 transition-colors text-left"
-        style={{ background: "rgba(255,255,255,0.03)" }}>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0"
-          style={{ background: domainColor + "22", color: domainColor }}>
-          {phase.phase}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-bold text-white">{phase.title}</span>
-            <span className="text-xs text-gray-500 px-2 py-0.5 rounded-full bg-white/5">{phase.weeks}</span>
-            {pct === 100 && (
-              <span className="text-xs text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />Done
-              </span>
-            )}
-          </div>
-          <div className="text-xs text-gray-400 mt-0.5 truncate">{phase.description}</div>
-          <div className="flex items-center gap-2 mt-2">
-            <div className="flex-1 h-1 rounded-full bg-white/10">
-              <div className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${pct}%`, background: domainColor }} />
-            </div>
-            <span className="text-xs text-gray-500 flex-shrink-0">{done}/{total}</span>
-          </div>
-        </div>
-        {open ? <ChevronUp className="w-4 h-4 text-gray-500 flex-shrink-0" />
-               : <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0" />}
-      </button>
-      {open && (
-        <div className="p-4 pt-0 space-y-2">
-          {phase.topics?.map((topic, ti) => (
-            <TopicCard key={ti} topic={topic} phaseIdx={phaseIdx} topicIdx={ti}
-              checked={!!checked[`${phaseIdx}-${ti}`]} onToggle={onToggle} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Main Component ────────────────────────────────────────────
-export default function GuidePage({ userIndustry }) {
-  const availableDomains = useMemo(() => getMatchingDomains(userIndustry), [userIndustry]);
-
-  const [step,           setStep]           = useState("pick");
-  const [selectedDomain, setSelectedDomain] = useState(a
-    availableDomains.length === 1 ? availableDomains[0].id : null
-  );
-  const [selectedExp,    setSelectedExp]    = useState(null);
-  const [goal,           setGoal]           = useState("");
-  const [roadmap,        setRoadmap]        = useState(null);
-  const [error,          setError]          = useState(null);
-  const [checked,        setChecked]        = useState({});
-
-  const domainObj   = ALL_DOMAINS.find(d => d.id === selectedDomain);
-  const allTopics   = roadmap?.phases?.flatMap((ph, pi) => ph.topics?.map((_, ti) => `${pi}-${ti}`) || []) || [];
-  const totalTopics = allTopics.length;
-  const doneTopics  = allTopics.filter(k => checked[k]).length;
-  const overallPct  = totalTopics > 0 ? Math.round((doneTopics / totalTopics) * 100) : 0;
-
-  const handleToggle = (key) => setChecked(p => ({ ...p, [key]: !p[key] }));
-
-  const handleGenerate = async () => {
-    if (!selectedDomain || !selectedExp) return;
-    setStep("generating");
-    setError(null);
-    try {
-      const data = await generateRoadmap({ domain: selectedDomain, experience: selectedExp, goal });
-      setRoadmap(data);
-      setChecked({});
-      setStep("roadmap");
-    } catch (e) {
-      setError(e.message);
-      setStep("pick");
-    }
-  };
-
-  const handleReset = () => {
-    setStep("pick");
-    setRoadmap(null);
-    setChecked({});
-    setSelectedDomain(availableDomains.length === 1 ? availableDomains[0].id : null);
-    setSelectedExp(null);
-    setGoal("");
-  };
-
-  // ── Generating ───────────────────────────────────────────
-  if (step === "generating") {
-    const DIcon = domainObj?.Icon;
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center"
-            style={{ background: domainObj?.color + "22" }}>
-            {DIcon && <DIcon className="w-8 h-8" style={{ color: domainObj?.color }} />}
-          </div>
-          <Loader2 className="w-8 h-8 animate-spin mx-auto" style={{ color: domainObj?.color }} />
-          <div className="text-white font-semibold">Building your {selectedDomain} roadmap...</div>
-          <div className="text-gray-400 text-sm">Curating a personalised week-by-week plan</div>
-          <div className="text-gray-600 text-xs">This takes ~8–12 seconds</div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Roadmap view ─────────────────────────────────────────
-  if (step === "roadmap" && roadmap) {
-    const DIcon = domainObj?.Icon;
-    return (
-      <div className="min-h-screen p-6 md:p-10">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: domainObj?.color + "22" }}>
-                {DIcon && <DIcon className="w-6 h-6" style={{ color: domainObj?.color }} />}
-              </div>
-              <div>
-                <h1 className="text-2xl font-black text-white">{roadmap.title}</h1>
-                <div className="flex items-center gap-3 mt-1 text-xs text-gray-400 flex-wrap">
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{roadmap.totalWeeks} weeks</span>
-                  <span className="flex items-center gap-1"><Target className="w-3 h-3" />{selectedExp}</span>
-                  <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{roadmap.phases?.length} phases</span>
-                </div>
-              </div>
-            </div>
-            <button onClick={handleReset}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 border border-white/10 hover:bg-white/5 transition-colors">
-              <RotateCcw className="w-3.5 h-3.5" /> New Roadmap
-            </button>
-          </div>
-
-          <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02] text-sm text-gray-300 leading-relaxed">
-            {roadmap.overview}
-          </div>
-
-          <div className="p-4 rounded-xl border overflow-hidden"
-            style={{ borderColor: domainObj?.color + "33", background: domainObj?.color + "08" }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-sm font-bold text-white flex items-center gap-2">
-                <Trophy className="w-4 h-4" style={{ color: domainObj?.color }} /> Overall Progress
-              </div>
-              <div className="text-2xl font-black" style={{ color: domainObj?.color }}>{overallPct}%</div>
-            </div>
-            <div className="h-3 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${overallPct}%`, background: `linear-gradient(90deg, ${domainObj?.color}, ${domainObj?.color}88)` }} />
-            </div>
-            <div className="text-xs text-gray-400 mt-2">{doneTopics} of {totalTopics} topics completed</div>
-            {overallPct === 100 && (
-              <div className="mt-3 text-emerald-400 font-semibold text-sm flex items-center gap-2">
-                <Trophy className="w-4 h-4" /> Congratulations! You are job-ready! 🎉
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {roadmap.phases?.map((phase, pi) => (
-              <PhaseSection key={pi} phase={phase} phaseIdx={pi} checked={checked}
-                onToggle={handleToggle} domainColor={domainObj?.color} />
-            ))}
-          </div>
-
-          {roadmap.finalProject && (
-            <div className="p-5 rounded-xl border"
-              style={{ borderColor: domainObj?.color + "44", background: domainObj?.color + "10" }}>
-              <div className="flex items-center gap-2 text-sm font-bold mb-2" style={{ color: domainObj?.color }}>
-                <Trophy className="w-4 h-4" /> Capstone Project
-              </div>
-              <div className="text-white font-semibold">{roadmap.finalProject.title}</div>
-              <div className="text-sm text-gray-300 mt-1">{roadmap.finalProject.description}</div>
-              {roadmap.finalProject.techStack?.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {roadmap.finalProject.techStack.map((tech, i) => (
-                    <span key={i} className="text-xs px-2 py-1 rounded-md"
-                      style={{ background: domainObj?.color + "22", color: domainObj?.color, border: `1px solid ${domainObj?.color}33` }}>
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {roadmap.jobReadyChecklist?.length > 0 && (
-            <div className="p-5 rounded-xl border border-white/10 bg-white/[0.02]">
-              <div className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Job-Ready Checklist
-              </div>
-              <div className="space-y-2">
-                {roadmap.jobReadyChecklist.map((item, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                    <ArrowRight className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ── Domain Picker ─────────────────────────────────────────
-  const showingCategory = availableDomains[0]?.category || "tech";
-  const isPersonalized  = userIndustry && availableDomains.length < ALL_DOMAINS.length;
-
-  return (
-    <div className="min-h-screen p-6 md:p-10">
-      <div className="max-w-3xl mx-auto space-y-8">
-
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-            <Map className="w-5 h-5 text-indigo-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-white">Career Roadmap Generator</h1>
-            <p className="text-gray-400 text-xs mt-0.5">
-              AI-powered week-by-week plan with real resources & guides
-            </p>
-          </div>
-        </div>
-
-        {/* Personalization badge */}
-        {isPersonalized && (
-          <div className="flex items-start gap-3 p-4 rounded-xl"
-            style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)" }}>
-            <CheckCircle2 className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-indigo-300 text-sm font-semibold">Personalised for your profile</p>
-              <p className="text-indigo-400/70 text-xs mt-0.5">
-                Showing roadmaps matched to your industry:{" "}
-                <span className="font-semibold text-indigo-300">{userIndustry}</span>
-              </p>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
-            {error} — Please try again.
-          </div>
-        )}
-
-        {/* Step 1 — Domain */}
-        <div>
-          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Step 1 — Choose your domain
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {availableDomains.map((d) => {
-              const DIcon = d.Icon;
-              const isSelected = selectedDomain === d.id;
-              return (
-                <button key={d.id} onClick={() => setSelectedDomain(d.id)}
-                  className="p-4 rounded-xl border text-left transition-all hover:scale-[1.02]"
-                  style={{
-                    borderColor: isSelected ? d.color : "rgba(255,255,255,0.08)",
-                    background:  isSelected ? d.color + "18" : "rgba(255,255,255,0.02)",
-                  }}>
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
-                    style={{ background: d.color + "22", color: d.color }}>
-                    <DIcon className="w-5 h-5" />
-                  </div>
-                  <div className="text-sm font-bold text-white">{d.label}</div>
-                  <div className="text-xs text-gray-500 mt-0.5 leading-tight">{d.desc}</div>
-                  {isSelected && <CheckCircle2 className="w-4 h-4 mt-2" style={{ color: d.color }} />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Step 2 — Experience */}
-        {selectedDomain && (
-          <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Step 2 — Your experience level
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {EXPERIENCE.map((e) => {
-                const isSelected = selectedExp === e.id;
-                return (
-                  <button key={e.id} onClick={() => setSelectedExp(e.id)}
-                    className="p-3 rounded-xl border text-left transition-all"
-                    style={{
-                      borderColor: isSelected ? domainObj?.color : "rgba(255,255,255,0.08)",
-                      background:  isSelected ? domainObj?.color + "18" : "rgba(255,255,255,0.02)",
-                    }}>
-                    <div className="text-sm font-bold text-white">{e.label}</div>
-                    <div className="text-xs text-gray-500">{e.desc}</div>
-                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 mt-1.5" style={{ color: domainObj?.color }} />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Step 3 — Goal */}
-        {selectedExp && (
-          <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Step 3 — Your goal{" "}
-              <span className="text-gray-700 normal-case font-normal">(optional)</span>
-            </div>
-            <input type="text" value={goal} onChange={(e) => setGoal(e.target.value)}
-              placeholder={`e.g. Land a ${selectedDomain} role at a top firm in 6 months`}
-              className="w-full px-4 py-3 rounded-xl border bg-transparent text-sm text-white placeholder-gray-600 outline-none focus:border-white/30 transition-colors"
-              style={{ borderColor: "rgba(255,255,255,0.1)" }} />
-          </div>
-        )}
-
-        {/* Generate */}
-        {selectedDomain && selectedExp && (
-          <button onClick={handleGenerate}
-            className="w-full py-4 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 flex items-center justify-center gap-2"
-            style={{ background: `linear-gradient(135deg, ${domainObj?.color}, ${domainObj?.color}aa)` }}>
-            <Zap className="w-4 h-4" />
-            Generate My {selectedDomain} Roadmap with AI
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        )}
-
-      </div>
-    </div>
-  );
+  return roadmap;
 }

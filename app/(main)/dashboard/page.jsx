@@ -1,4 +1,5 @@
 import { getIndustryInsights } from "@/actions/dashboard";
+import { getDomainFeed } from "@/actions/blogs";
 import DashboardView from "./_component/dashboard-view";
 import { getUserOnboardingStatus } from "@/actions/user";
 import { redirect } from "next/navigation";
@@ -11,7 +12,11 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
 
-  const insights = await getIndustryInsights();
+  // Fetch both in parallel
+  const [insights, feedData] = await Promise.all([
+    getIndustryInsights(),
+    getDomainFeed(),
+  ]);
 
   return (
     <div className="container mx-auto space-y-6">
@@ -24,10 +29,7 @@ export default async function DashboardPage() {
           priority
           className="object-cover object-center"
         />
-        {/* Dark gradient overlay so text is readable */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-
-     
         <div className="absolute inset-0 flex flex-col justify-center px-8">
           <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">
             Your Industry at a Glance
@@ -38,8 +40,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-     
-      <DashboardView insights={insights} />
+      <DashboardView insights={insights} feedData={feedData} />
 
     </div>
   );

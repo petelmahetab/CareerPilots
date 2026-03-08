@@ -109,3 +109,26 @@ model CareerScore {
   updatedAt    DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id])
 }
+
+model DomainFeed {
+  id          String   @id @default(cuid())
+  industry    String   @unique
+  articles    Json
+  lastFetched DateTime @default(now())
+  nextUpdate  DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([industry])
+}
+
+model AtsTemplate {
+  id          String   @id @default(cuid())
+  industry    String   @unique
+  templates   Json
+  lastFetched DateTime @default(now())
+  nextUpdate  DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([industry])
+}

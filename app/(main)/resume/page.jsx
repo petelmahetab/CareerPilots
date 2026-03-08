@@ -1,9 +1,14 @@
 import { getResume } from "@/actions/resume";
+import { getAtsTemplates } from "@/actions/resume-templates";
 import ResumeBuilder from "./_components/resume-builder";
+import AtsTemplates from "@/components/ats-templates";
 import Image from "next/image";
 
 export default async function ResumePage() {
-  const resume = await getResume();
+  const [resume, templateData] = await Promise.all([
+    getResume(),
+    getAtsTemplates(),
+  ]);
 
   return (
     <div className="space-y-0">
@@ -17,10 +22,7 @@ export default async function ResumePage() {
           priority
           className="object-cover object-top"
         />
-        {/* Left-to-right gradient so text pops */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-transparent" />
-
-        {/* Text on banner */}
         <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-10">
           <h1 className="text-3xl md:text-5xl font-bold gradient-title">
             Resume Builder
@@ -31,9 +33,14 @@ export default async function ResumePage() {
         </div>
       </div>
 
-    
       <div className="container mx-auto py-2">
         <ResumeBuilder initialContent={resume?.content} />
+      </div>
+
+      <div className="container mx-auto py-8">
+        <div className="border-t border-white/10 pt-10">
+          <AtsTemplates initialData={templateData} />
+        </div>
       </div>
 
     </div>

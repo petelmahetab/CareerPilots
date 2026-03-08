@@ -2,81 +2,57 @@
 
 import React from "react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
 } from "recharts";
 import {
-  BriefcaseIcon,
-  LineChart,
-  TrendingUp,
-  TrendingDown,
-  Brain,
+  BriefcaseIcon, LineChart, TrendingUp, TrendingDown, Brain,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge }    from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { UpgradeBanner } from "@/components/upgrade-banner";
+import DomainFeed from "@/components/domain-feed";   // ← NEW
 
-const DashboardView = ({ insights }) => {
-  // Transform salary data for the chart
+const DashboardView = ({ insights, feedData }) => {   // ← feedData added
   const salaryData = insights.salaryRanges.map((range) => ({
-    name: range.role,
-    min: range.min / 1000,
-    max: range.max / 1000,
+    name:   range.role,
+    min:    range.min    / 1000,
+    max:    range.max    / 1000,
     median: range.median / 1000,
   }));
 
   const getDemandLevelColor = (level) => {
     switch (level.toLowerCase()) {
-      case "high":
-        return "bg-green-500";
-      case "medium":
-        return "bg-yellow-500";
-      case "low":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
+      case "high":   return "bg-green-500";
+      case "medium": return "bg-yellow-500";
+      case "low":    return "bg-red-500";
+      default:       return "bg-gray-500";
     }
   };
 
   const getMarketOutlookInfo = (outlook) => {
     switch (outlook.toLowerCase()) {
-      case "positive":
-        return { icon: TrendingUp, color: "text-green-500" };
-      case "neutral":
-        return { icon: LineChart, color: "text-yellow-500" };
-      case "negative":
-        return { icon: TrendingDown, color: "text-red-500" };
-      default:
-        return { icon: LineChart, color: "text-gray-500" };
+      case "positive": return { icon: TrendingUp,   color: "text-green-500"  };
+      case "neutral":  return { icon: LineChart,    color: "text-yellow-500" };
+      case "negative": return { icon: TrendingDown, color: "text-red-500"    };
+      default:         return { icon: LineChart,    color: "text-gray-500"   };
     }
   };
 
-  const OutlookIcon = getMarketOutlookInfo(insights.marketOutlook).icon;
+  const OutlookIcon  = getMarketOutlookInfo(insights.marketOutlook).icon;
   const outlookColor = getMarketOutlookInfo(insights.marketOutlook).color;
 
-  // Format dates using date-fns
-  const lastUpdatedDate = format(new Date(insights.lastUpdated), "dd/MM/yyyy");
-  const nextUpdateDistance = formatDistanceToNow(
-    new Date(insights.nextUpdate),
-    { addSuffix: true }
-  );
+  const lastUpdatedDate    = format(new Date(insights.lastUpdated), "dd/MM/yyyy");
+  const nextUpdateDistance = formatDistanceToNow(new Date(insights.nextUpdate), { addSuffix: true });
 
   return (
     <div className="space-y-6">
-       <UpgradeBanner />
+      <UpgradeBanner />
+
       <div className="flex justify-between items-center">
         <Badge variant="outline">Last updated: {lastUpdatedDate}</Badge>
       </div>
@@ -85,9 +61,7 @@ const DashboardView = ({ insights }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Market Outlook
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Market Outlook</CardTitle>
             <OutlookIcon className={`h-4 w-4 ${outlookColor}`} />
           </CardHeader>
           <CardContent>
@@ -100,9 +74,7 @@ const DashboardView = ({ insights }) => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Industry Growth
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Industry Growth</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -120,11 +92,7 @@ const DashboardView = ({ insights }) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{insights.demandLevel}</div>
-            <div
-              className={`h-2 w-full rounded-full mt-2 ${getDemandLevelColor(
-                insights.demandLevel
-              )}`}
-            />
+            <div className={`h-2 w-full rounded-full mt-2 ${getDemandLevelColor(insights.demandLevel)}`} />
           </CardContent>
         </Card>
 
@@ -136,9 +104,7 @@ const DashboardView = ({ insights }) => {
           <CardContent>
             <div className="flex flex-wrap gap-1">
               {insights.topSkills.map((skill) => (
-                <Badge key={skill} variant="secondary">
-                  {skill}
-                </Badge>
+                <Badge key={skill} variant="secondary">{skill}</Badge>
               ))}
             </div>
           </CardContent>
@@ -177,9 +143,9 @@ const DashboardView = ({ insights }) => {
                     return null;
                   }}
                 />
-                <Bar dataKey="min" fill="#94a3b8" name="Min Salary (K)" />
+                <Bar dataKey="min"    fill="#94a3b8" name="Min Salary (K)"    />
                 <Bar dataKey="median" fill="#64748b" name="Median Salary (K)" />
-                <Bar dataKey="max" fill="#475569" name="Max Salary (K)" />
+                <Bar dataKey="max"    fill="#475569" name="Max Salary (K)"    />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -191,9 +157,7 @@ const DashboardView = ({ insights }) => {
         <Card>
           <CardHeader>
             <CardTitle>Key Industry Trends</CardTitle>
-            <CardDescription>
-              Current trends shaping the industry
-            </CardDescription>
+            <CardDescription>Current trends shaping the industry</CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-4">
@@ -215,14 +179,20 @@ const DashboardView = ({ insights }) => {
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {insights.recommendedSkills.map((skill) => (
-                <Badge key={skill} variant="outline">
-                  {skill}
-                </Badge>
+                <Badge key={skill} variant="outline">{skill}</Badge>
               ))}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* ── Domain Feed — NEW SECTION ── */}
+      <Card>
+        <CardContent className="pt-6">
+          <DomainFeed initialData={feedData} />
+        </CardContent>
+      </Card>
+
     </div>
   );
 };
