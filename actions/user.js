@@ -19,7 +19,7 @@ async function ensureUser(userId) {
         email:       clerkUser?.emailAddresses?.[0]?.emailAddress || "",
         name:        `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim() || null,
         imageUrl:    clerkUser?.imageUrl || null,
-        // ✅ NO isOnboarded — your schema uses industry presence to check this
+    
         plan:        "free",
       },
     });
